@@ -2,8 +2,10 @@ class AbsenceJustification < ActiveRecord::Base
   include Audit
   include Filterable
   include Discardable
+  include ColumnsLockable
   include TeacherRelationable
 
+  not_updatable only: :classroom_id
   teacher_relation_columns only: [:classroom]
 
   acts_as_copy_target
@@ -13,9 +15,10 @@ class AbsenceJustification < ActiveRecord::Base
   before_destroy :valid_for_destruction?
   before_destroy :remove_attachments, if: :valid_for_destruction?
 
-  has_many :absence_justifications_students
+  has_many :absence_justifications_students, dependent: :destroy
   has_many :students, through: :absence_justifications_students
-  deferred_has_and_belongs_to_many :disciplines
+  has_many :absence_justifications_disciplines, dependent: :destroy
+  has_many :disciplines, through: :absence_justifications_disciplines
   belongs_to :unity
   belongs_to :classroom
   belongs_to :school_calendar
@@ -48,8 +51,9 @@ class AbsenceJustification < ActiveRecord::Base
   scope :by_classroom, ->(classroom_id) { where('classroom_id = ? OR classroom_id IS NULL', classroom_id) }
   scope :by_student, lambda { |student_name|
     joins(:students).where(
-      "(unaccent(students.name) ILIKE unaccent('%#{student_name}%') or
-        unaccent(students.social_name) ILIKE unaccent('%#{student_name}%'))"
+      "(unaccent(students.name) ILIKE unaccent(:student_name) or
+        unaccent(students.social_name) ILIKE unaccent(:student_name))",
+      student_name: "%#{student_name}%"
     )
   }
   scope :by_discipline_id, lambda { |discipline_id|
@@ -134,6 +138,7 @@ class AbsenceJustification < ActiveRecord::Base
   def valid_for_destruction?
     @valid_for_destruction if defined?(@valid_for_destruction)
     @valid_for_destruction = begin
+      self.validation_type = :destroy
       valid?
       forbidden_error = I18n.t('errors.messages.not_allowed_to_post_in_date')
       !(errors[:absence_date_end].include?(forbidden_error) || errors[:absence_date].include?(forbidden_error))

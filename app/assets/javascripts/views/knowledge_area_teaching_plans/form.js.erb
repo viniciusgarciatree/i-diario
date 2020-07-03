@@ -1,3 +1,6 @@
+window['content_list_model_name'] = 'knowledge_area_teaching_plan';
+window['content_list_submodel_name'] = 'teaching_plan';
+
 $(function() {
   'use strict';
 
@@ -14,6 +17,11 @@ $(function() {
       case 'bimester':
         $schoolTerm.select2('val', '');
         $schoolTerm.select2({ data: <%= Bimesters.to_select.to_json %> });
+        $schoolTermContainer.show();
+        break;
+      case 'bimester_eja':
+        $schoolTerm.select2('val', '');
+        $schoolTerm.select2({ data: <%= BimestersEja.to_select.to_json %> });
         $schoolTermContainer.show();
         break;
       case 'trimester':
@@ -38,6 +46,7 @@ $(function() {
 
   $schoolTermType.on('change', function() {
     updateSchoolTermInput();
+    $('#copy_plan_info').show();
   });
 
   // On load
@@ -45,4 +54,54 @@ $(function() {
   updateSchoolTermInput();
 
   validate_attachment_size($('#knowledge_area_teaching_plan'));
+
+  $('#knowledge_area_teaching_plan_teaching_plan_attributes_contents_tags').on('change', function(e){
+    if(e.val.length){
+      var content_description = e.val.join(", ");
+      if(content_description.trim().length &&
+          !$('input[type=checkbox][data-content_description="'+content_description+'"]').length){
+
+        var html = JST['templates/layouts/contents_list_manual_item']({
+          description: content_description,
+          model_name: 'knowledge_area_teaching_plan',
+          submodel_name: 'teaching_plan'
+        });
+
+        $('#contents-list').append(html);
+        $('.list-group.checked-list-box .list-group-item:not(.initialized)').each(initializeListEvents);
+      }else{
+        var content_input = $('input[type=checkbox][data-content_description="'+content_description+'"]');
+        content_input.closest('li').show();
+        content_input.prop('checked', true).trigger('change');
+      }
+
+      $('.knowledge_area_teaching_plan_teaching_plan_contents_tags .select2-input').val("");
+    }
+    $(this).select2('val', '');
+  });
+
+  $('#knowledge_area_teaching_plan_teaching_plan_attributes_objectives_tags').on('change', function(e){
+    if(e.val.length){
+      var objective_description = e.val.join(", ");
+      if(objective_description.trim().length &&
+          !$('input[type=checkbox][data-objective_description="'+objective_description+'"]').length){
+
+        var html = JST['templates/layouts/objectives_list_manual_item']({
+          description: objective_description,
+          model_name: 'knowledge_area_teaching_plan',
+          submodel_name: 'teaching_plan'
+        });
+
+        $('#objectives-list').append(html);
+        $('.list-group.checked-list-box .list-group-item:not(.initialized)').each(initializeListEvents);
+      }else{
+        var objective_input = $('input[type=checkbox][data-objective_description="'+objective_description+'"]');
+        objective_input.closest('li').show();
+        objective_input.prop('checked', true).trigger('change');
+      }
+
+      $('.knowledge_area_teaching_plan_teaching_plan_objectives_tags .select2-input').val("");
+    }
+    $(this).select2('val', '');
+  });
 });

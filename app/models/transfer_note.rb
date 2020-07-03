@@ -1,9 +1,11 @@
 class TransferNote < ActiveRecord::Base
   include Audit
   include Stepable
+  include ColumnsLockable
   include TeacherRelationable
   include Discardable
 
+  not_updatable only: [:classroom_id, :discipline_id]
   teacher_relation_columns only: [:classroom, :discipline]
 
   audited except: [:teacher_id, :recorded_at]
@@ -39,8 +41,9 @@ class TransferNote < ActiveRecord::Base
   }
   scope :by_student_name, lambda { |student_name|
     joins(:student).where(
-      "(unaccent(students.name) ILIKE unaccent('%#{student_name}%') or
-        unaccent(students.social_name) ILIKE unaccent('%#{student_name}%'))"
+      "(unaccent(students.name) ILIKE unaccent(:student_name) or
+        unaccent(students.social_name) ILIKE unaccent(:student_name))",
+      student_name: "%#{student_name}%"
     )
   }
   scope :by_transfer_date, lambda { |transfer_date| where(transfer_date: transfer_date.to_date) }
@@ -53,6 +56,10 @@ class TransferNote < ActiveRecord::Base
   }
 
   delegate :unity, :unity_id, to: :classroom, allow_nil: true
+
+  def ignore_date_validates
+    !(new_record? || recorded_at != recorded_at_was)
+  end
 
   private
 
@@ -69,6 +76,7 @@ class TransferNote < ActiveRecord::Base
   def valid_for_destruction?
     @valid_for_destruction if defined?(@valid_for_destruction)
     @valid_for_destruction = begin
+      self.validation_type = :destroy
       valid?
       !errors[:transfer_date].include?(I18n.t('errors.messages.not_allowed_to_post_in_date'))
     end

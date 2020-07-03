@@ -3,18 +3,14 @@ class FinalRecoveryDiaryRecordsController < ApplicationController
   has_scope :per, default: 10
 
   before_action :require_current_teacher
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy]
 
   def index
-    @final_recovery_diary_records = apply_scopes(FinalRecoveryDiaryRecord)
-      .includes(
-        recovery_diary_record: [
-          :unity,
-          :classroom,
-          :discipline
-        ]
-      )
+    @final_recovery_diary_records =
+      apply_scopes(FinalRecoveryDiaryRecord)
+      .includes(recovery_diary_record: [:unity, :classroom, :discipline])
       .filter(filtering_params(params[:search]))
-      .by_unity_id(current_user_unity.id)
+      .by_unity_id(current_unity.id)
       .by_classroom_id(current_user_classroom)
       .by_discipline_id(current_user_discipline)
       .ordered
@@ -29,7 +25,7 @@ class FinalRecoveryDiaryRecordsController < ApplicationController
     @final_recovery_diary_record = FinalRecoveryDiaryRecord.new.localized
     @final_recovery_diary_record.school_calendar = current_school_calendar
     @final_recovery_diary_record.build_recovery_diary_record
-    @final_recovery_diary_record.recovery_diary_record.unity = current_user_unity
+    @final_recovery_diary_record.recovery_diary_record.unity = current_unity
 
 
     @number_of_decimal_places = @final_recovery_diary_record.school_calendar.steps.to_a.last.test_setting.number_of_decimal_places
@@ -72,6 +68,7 @@ class FinalRecoveryDiaryRecordsController < ApplicationController
     @final_recovery_diary_record = FinalRecoveryDiaryRecord.find(params[:id]).localized
     @final_recovery_diary_record.assign_attributes(resource_params)
     @final_recovery_diary_record.recovery_diary_record.teacher_id = current_teacher_id
+    @final_recovery_diary_record.recovery_diary_record.current_user = current_user
 
     authorize @final_recovery_diary_record
 

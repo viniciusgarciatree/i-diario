@@ -1,11 +1,13 @@
 class LessonPlan < ActiveRecord::Base
   include Audit
   include TeacherRelationable
+  include Translatable
 
   teacher_relation_columns only: :classroom
 
   acts_as_copy_target
 
+  attr_accessor :grade_ids
   attr_writer :contents_tags
 
   audited except: [:teacher_id, :old_contents]
@@ -19,7 +21,9 @@ class LessonPlan < ActiveRecord::Base
   has_one :knowledge_area_lesson_plan
 
   has_many :contents_lesson_plans, dependent: :destroy
-  has_many :contents, through: :contents_lesson_plans
+  deferred_has_many :contents, through: :contents_lesson_plans
+  has_many :objectives_lesson_plans, dependent: :destroy
+  deferred_has_many :objectives, through: :objectives_lesson_plans
   has_many :lesson_plan_attachments, dependent: :destroy
 
   accepts_nested_attributes_for :contents, allow_destroy: true
@@ -63,6 +67,10 @@ class LessonPlan < ActiveRecord::Base
 
   def contents_ordered
     contents.order(' "contents_lesson_plans"."id" ')
+  end
+
+  def objectives_ordered
+    objectives.order('objectives_lesson_plans.id')
   end
 
   private

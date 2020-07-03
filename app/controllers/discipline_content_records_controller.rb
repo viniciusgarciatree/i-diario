@@ -3,6 +3,7 @@ class DisciplineContentRecordsController < ApplicationController
   has_scope :per, default: 10
 
   before_action :require_current_teacher
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy, :clone]
 
   def index
     params[:filter] ||= {}
@@ -11,7 +12,7 @@ class DisciplineContentRecordsController < ApplicationController
 
     @discipline_content_records = apply_scopes(
       DisciplineContentRecord.includes(:discipline, content_record: [:classroom])
-                             .by_unity_id(current_user_unity.id)
+                             .by_unity_id(current_unity.id)
                              .by_classroom_id(current_user_classroom)
                              .by_discipline_id(current_user_discipline)
                              .ordered
@@ -29,7 +30,7 @@ class DisciplineContentRecordsController < ApplicationController
     @discipline_content_record = DisciplineContentRecord.new.localized
     @discipline_content_record.build_content_record(
       record_date: Time.zone.now,
-      unity_id: current_user_unity.id
+      unity_id: current_unity.id
     )
 
     authorize @discipline_content_record
@@ -63,6 +64,8 @@ class DisciplineContentRecordsController < ApplicationController
     @discipline_content_record.assign_attributes(resource_params)
     @discipline_content_record.content_record.content_ids = content_ids
     @discipline_content_record.teacher_id = current_teacher_id
+    @discipline_content_record.content_record.current_user = current_user
+    @discipline_content_record.current_user = current_user
 
     authorize @discipline_content_record
 
@@ -167,12 +170,12 @@ class DisciplineContentRecordsController < ApplicationController
   end
 
   def unities
-    @unities = [current_user_unity]
+    @unities = [current_unity]
   end
   helper_method :unities
 
   def classrooms
-    @classrooms = Classroom.by_unity_and_teacher(current_user_unity.id, current_teacher.id).ordered
+    @classrooms = Classroom.by_unity_and_teacher(current_unity.id, current_teacher.id).ordered
   end
   helper_method :classrooms
 

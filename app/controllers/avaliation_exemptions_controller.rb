@@ -2,10 +2,12 @@ class AvaliationExemptionsController < ApplicationController
   has_scope :page, default: 1
   has_scope :per, default: 10
 
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy]
+
   def index
     @avaliation_exemptions = apply_scopes(AvaliationExemption)
                              .includes(:avaliation)
-                             .by_unity(current_user_unity)
+                             .by_unity(current_unity)
                              .by_classroom(current_user_classroom)
                              .by_discipline(current_user_discipline)
 
@@ -23,6 +25,7 @@ class AvaliationExemptionsController < ApplicationController
   def create
     @avaliation_exemption = AvaliationExemption.new.localized
     @avaliation_exemption.assign_attributes(avaliation_exemption_params)
+    @avaliation_exemption.teacher_id = current_teacher_id
 
     authorize @avaliation_exemption
 
@@ -42,6 +45,8 @@ class AvaliationExemptionsController < ApplicationController
 
   def update
     @avaliation_exemption = AvaliationExemption.find(params[:id]).localized
+    @avaliation_exemption.teacher_id = current_teacher_id
+    @avaliation_exemption.current_user = current_user
 
     authorize @avaliation_exemption
 

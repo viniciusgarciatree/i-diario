@@ -25,6 +25,12 @@ class SchoolCalendarEventsController < ApplicationController
     authorize resource
 
     if resource.save
+      if [EventTypes::NO_SCHOOL, EventTypes::EXTRA_SCHOOL_WITHOUT_FREQUENCY].include?(resource.event_type)
+        school_days_to_remove = resource.start_date..resource.end_date
+
+        UnitySchoolDay.where(school_day: school_days_to_remove).each(&:destroy)
+      end
+
       respond_with resource, location: school_calendar_school_calendar_events_path
     else
       clear_invalid_dates
@@ -103,7 +109,7 @@ class SchoolCalendarEventsController < ApplicationController
   def resource_params
     params.require(:school_calendar_event).permit(
       :coverage, :course_id, :grade_id, :classroom_id, :discipline_id,
-      :description, :start_date, :end_date, :event_type, :periods, :legend
+      :description, :start_date, :end_date, :event_type, :periods, :legend, :show_in_frequency_record
     )
   end
 
@@ -127,13 +133,17 @@ class SchoolCalendarEventsController < ApplicationController
 
   def check_user_unity
     return if show_all_unities?
-    return if current_user_unity.try(:id) == school_calendar.unity_id
+    return if current_unity.try(:id) == school_calendar.unity_id
 
     redirect_to(school_calendars_path, alert: I18n.t('school_calendars.invalid_unity'))
   end
 
   def show_all_unities?
-    @show_all_unities ||= current_user.current_user_role.role_administrator?
+    @show_all_unities ||= current_user_role.try(:role_administrator?)
   end
   helper_method :show_all_unities?
+
+  def current_user_role
+    current_user.current_user_role || current_user.user_roles.first
+  end
 end

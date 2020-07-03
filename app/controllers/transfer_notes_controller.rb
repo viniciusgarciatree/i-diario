@@ -3,6 +3,8 @@ class TransferNotesController < ApplicationController
   has_scope :per, default: 10
 
   before_action :require_current_teacher
+  before_action :require_current_clasroom
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy]
 
   def index
     step_id = (params[:filter] || []).delete(:by_step)
@@ -21,7 +23,7 @@ class TransferNotesController < ApplicationController
 
   def new
     @transfer_note = TransferNote.new(
-      unity_id: current_user_unity.id
+      unity_id: current_unity.id
     ).localized
 
     authorize @transfer_note
@@ -52,6 +54,7 @@ class TransferNotesController < ApplicationController
 
   def update
     @transfer_note = TransferNote.find(params[:id]).localized
+    @transfer_note.current_user = current_user
     @transfer_note.assign_attributes(resource_params)
 
     authorize @transfer_note
@@ -131,13 +134,13 @@ class TransferNotesController < ApplicationController
   end
 
   def unities
-    @unities = [@transfer_note.classroom.present? ? @transfer_note.classroom.unity : current_user_unity]
+    @unities = [@transfer_note.classroom.present? ? @transfer_note.classroom.unity : current_unity]
   end
   helper_method :unities
 
   def classrooms
     @classrooms ||= Classroom.by_unity_and_teacher(
-      current_user_unity.id,
+      current_unity.id,
       current_teacher.id
     )
     .ordered

@@ -2,14 +2,17 @@ class ConceptualExamsController < ApplicationController
   has_scope :page, default: 1
   has_scope :per, default: 10
 
-  before_action :require_current_teacher, :adjusted_period
+  before_action :require_current_teacher
+  before_action :require_current_clasroom
+  before_action :adjusted_period
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy]
 
   def index
     step_id = (params[:filter] || []).delete(:by_step)
     status = (params[:filter] || []).delete(:by_status)
 
     @conceptual_exams = apply_scopes(ConceptualExam).includes(:student, :classroom)
-                                                    .by_unity(current_user_unity)
+                                                    .by_unity(current_unity)
                                                     .by_classroom(current_user_classroom)
                                                     .by_teacher(current_teacher_id)
                                                     .ordered_by_date_and_student
@@ -44,7 +47,7 @@ class ConceptualExamsController < ApplicationController
     return if performed?
 
     @conceptual_exam = ConceptualExam.new(
-      unity_id: current_user_unity.id,
+      unity_id: current_unity.id,
       classroom_id: current_user_classroom.id,
       recorded_at: Date.current
     ).localized
@@ -68,14 +71,19 @@ class ConceptualExamsController < ApplicationController
   end
 
   def create
-    @conceptual_exam = find_or_initialize_conceptual_exam
-    authorize @conceptual_exam
-    @conceptual_exam.assign_attributes(resource_params)
-    @conceptual_exam.merge_conceptual_exam_values
-    @conceptual_exam.step_number = @conceptual_exam.step.try(:step_number)
-    @conceptual_exam.teacher_id = current_teacher_id
+    begin
+      @conceptual_exam = find_or_initialize_conceptual_exam
+      authorize @conceptual_exam
+      @conceptual_exam.assign_attributes(resource_params)
+      @conceptual_exam.merge_conceptual_exam_values
+      @conceptual_exam.step_number = @conceptual_exam.step.try(:step_number)
+      @conceptual_exam.teacher_id = current_teacher_id
+      @conceptual_exam.current_user = current_user
 
-    respond_to_save if @conceptual_exam.save
+      respond_to_save if @conceptual_exam.save
+    rescue ActiveRecord::RecordNotUnique
+      retry
+    end
 
     return if performed?
 
@@ -104,6 +112,7 @@ class ConceptualExamsController < ApplicationController
     @conceptual_exam = ConceptualExam.find(params[:id])
     @conceptual_exam.assign_attributes(resource_params)
     @conceptual_exam.teacher_id = current_teacher_id
+    @conceptual_exam.current_user = current_user
 
     authorize @conceptual_exam
 
@@ -339,7 +348,7 @@ class ConceptualExamsController < ApplicationController
 
       @student_ids = @student_enrollments.collect(&:student_id)
 
-      @students = Student.where(id: @student_ids)
+      @students = Student.where(id: @student_ids).ordered
     end
   end
 

@@ -1,6 +1,7 @@
 class KnowledgeAreaTeachingPlan < ActiveRecord::Base
   include Audit
   include TeacherRelationable
+  include Translatable
 
   teacher_relation_columns only: :knowledge_areas
 
@@ -14,6 +15,7 @@ class KnowledgeAreaTeachingPlan < ActiveRecord::Base
   has_many :knowledge_areas, through: :knowledge_area_teaching_plan_knowledge_areas
 
   delegate :contents, to: :teaching_plan
+  delegate :objectives, to: :teaching_plan
 
   accepts_nested_attributes_for :teaching_plan
 

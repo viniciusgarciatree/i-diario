@@ -3,6 +3,7 @@ class DisciplineTeachingPlansController < ApplicationController
   has_scope :per, default: 10
 
   before_action :require_current_teacher, unless: :current_user_is_employee_or_administrator?
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy]
 
   def index
     params[:filter] ||= {}
@@ -11,8 +12,8 @@ class DisciplineTeachingPlansController < ApplicationController
 
     @discipline_teaching_plans = apply_scopes(
       DisciplineTeachingPlan.includes(:discipline, teaching_plan: [:unity, :grade])
-                            .by_unity(current_user_unity)
-                            .by_year(current_user_school_year)
+                            .by_unity(current_unity)
+                            .by_year(current_school_year)
     )
 
     unless current_user_is_employee_or_administrator?
@@ -54,7 +55,7 @@ class DisciplineTeachingPlansController < ApplicationController
     @discipline_teaching_plan = DisciplineTeachingPlan.new.localized
     @discipline_teaching_plan.build_teaching_plan(
       year: current_school_calendar.year,
-      unity: current_user_unity
+      unity: current_unity
     )
 
     authorize @discipline_teaching_plan
@@ -65,6 +66,8 @@ class DisciplineTeachingPlansController < ApplicationController
   def create
     @discipline_teaching_plan = DisciplineTeachingPlan.new(resource_params).localized
     @discipline_teaching_plan.teaching_plan.teacher = current_teacher
+    @discipline_teaching_plan.teaching_plan.content_ids = content_ids
+    @discipline_teaching_plan.teaching_plan.objective_ids = objective_ids
     @discipline_teaching_plan.teacher_id = current_teacher_id
 
     authorize @discipline_teaching_plan
@@ -90,7 +93,10 @@ class DisciplineTeachingPlansController < ApplicationController
   def update
     @discipline_teaching_plan = DisciplineTeachingPlan.find(params[:id]).localized
     @discipline_teaching_plan.assign_attributes(resource_params)
+    @discipline_teaching_plan.teaching_plan.content_ids = content_ids
+    @discipline_teaching_plan.teaching_plan.objective_ids = objective_ids
     @discipline_teaching_plan.teacher_id = current_teacher_id
+    @discipline_teaching_plan.current_user = current_user
 
     authorize @discipline_teaching_plan
 
@@ -124,9 +130,25 @@ class DisciplineTeachingPlansController < ApplicationController
 
   private
 
+  def content_ids
+    param_content_ids = params[:discipline_teaching_plan][:teaching_plan_attributes][:content_ids] || []
+    content_descriptions = params[:discipline_teaching_plan][:teaching_plan_attributes][:content_descriptions] || []
+    new_contents_ids = content_descriptions.map{|v| Content.find_or_create_by!(description: v).id }
+    param_content_ids + new_contents_ids
+  end
+
+  def objective_ids
+    param_objective_ids = params[:discipline_teaching_plan][:teaching_plan_attributes][:objective_ids] || []
+    objective_descriptions =
+      params[:discipline_teaching_plan][:teaching_plan_attributes][:objective_descriptions] || []
+    new_objectives_ids = objective_descriptions.map { |value| Objective.find_or_create_by!(description: value).id }
+    param_objective_ids + new_objectives_ids
+  end
+
   def resource_params
     params.require(:discipline_teaching_plan).permit(
       :discipline_id,
+      :thematic_unit,
       teaching_plan_attributes: [
         :id,
         :year,
@@ -134,17 +156,11 @@ class DisciplineTeachingPlansController < ApplicationController
         :grade_id,
         :school_term_type,
         :school_term,
-        :objectives,
         :content,
         :methodology,
         :evaluation,
         :references,
         :teacher_id,
-        contents_attributes: [
-          :id,
-          :description,
-          :_destroy
-        ],
         teaching_plan_attachments_attributes: [
           :id,
           :attachment,
@@ -155,9 +171,30 @@ class DisciplineTeachingPlansController < ApplicationController
   end
 
   def contents
-    Content.ordered
+    @contents = []
+
+    if @discipline_teaching_plan.teaching_plan.contents
+      contents = @discipline_teaching_plan.teaching_plan.contents_ordered
+      contents.each { |content| content.is_editable = true }
+      @contents << contents
+    end
+
+    @contents.flatten.uniq
   end
   helper_method :contents
+
+  def objectives
+    @objectives = []
+
+    if @discipline_teaching_plan.teaching_plan.objectives
+      objectives = @discipline_teaching_plan.teaching_plan.objectives_ordered
+      objectives.each { |objective| objective.is_editable = true }
+      @objectives << objectives
+    end
+
+    @objectives.flatten.uniq
+  end
+  helper_method :objectives
 
   def fetch_collections
     fetch_unities
@@ -170,7 +207,7 @@ class DisciplineTeachingPlansController < ApplicationController
   end
 
   def fetch_grades
-    @grades = Grade.by_unity(current_user_unity)
+    @grades = Grade.by_unity(current_unity)
       .by_year(current_school_calendar.year)
       .ordered
 
@@ -179,7 +216,7 @@ class DisciplineTeachingPlansController < ApplicationController
 
   def fetch_disciplines
     if current_user_is_employee_or_administrator?
-      @disciplines = Discipline.by_unity_id(current_user_unity)
+      @disciplines = Discipline.by_unity_id(current_unity)
     else
       @disciplines = Discipline.where(id: current_user_discipline)
       .ordered

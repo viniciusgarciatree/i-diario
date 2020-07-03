@@ -4,6 +4,8 @@ class AbsenceJustificationsController < ApplicationController
   has_scope :page, default: 1
   has_scope :per, default: 10
 
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy]
+
   def index
     current_discipline = fetch_current_discipline
 
@@ -15,7 +17,7 @@ class AbsenceJustificationsController < ApplicationController
                                                                .includes(:classroom)
                                                                .includes(:unity)
                                                                .joins(:absence_justifications_students)
-                                                               .by_unity(current_user_unity)
+                                                               .by_unity(current_unity)
                                                                .by_classroom(current_user_classroom)
                                                                .by_school_calendar(current_school_calendar)
                                                                .filter(filtering_params(params[:search]))
@@ -24,7 +26,7 @@ class AbsenceJustificationsController < ApplicationController
     @absence_justifications = @absence_justifications.by_discipline_id(current_discipline) if current_discipline
 
     if author_type.present?
-      user_id = UserDiscriminatorService.new(current_user, current_user_role_is_employee_or_administrator?).user_id
+      user_id = UserDiscriminatorService.new(current_user, current_user.current_role_is_admin_or_employee?).user_id
 
       @absence_justifications = @absence_justifications.by_author(author_type, user_id)
       params[:search][:by_author] = author_type
@@ -37,7 +39,7 @@ class AbsenceJustificationsController < ApplicationController
     @absence_justification = AbsenceJustification.new.localized
     @absence_justification.absence_date = Time.zone.today
     @absence_justification.teacher = current_teacher
-    @absence_justification.unity = current_user_unity
+    @absence_justification.unity = current_unity
     @absence_justification.school_calendar = current_school_calendar
     fetch_collections
     fetch_students
@@ -49,7 +51,7 @@ class AbsenceJustificationsController < ApplicationController
     @absence_justification = AbsenceJustification.new(resource_params)
     @absence_justification.teacher = current_teacher
     @absence_justification.user = current_user
-    @absence_justification.unity = current_user_unity
+    @absence_justification.unity = current_unity
     @absence_justification.school_calendar = current_school_calendar
 
     authorize @absence_justification
@@ -66,7 +68,7 @@ class AbsenceJustificationsController < ApplicationController
 
   def edit
     @absence_justification = AbsenceJustification.find(params[:id]).localized
-    @absence_justification.unity = current_user_unity
+    @absence_justification.unity = current_unity
     fetch_collections
     fetch_students
 
@@ -76,6 +78,7 @@ class AbsenceJustificationsController < ApplicationController
   def update
     @absence_justification = AbsenceJustification.find(params[:id])
     @absence_justification.assign_attributes resource_params
+    @absence_justification.current_user = current_user
     @absence_justification.school_calendar = current_school_calendar if @absence_justification.persisted? && @absence_justification.school_calendar.blank?
     fetch_collections
 
@@ -156,7 +159,7 @@ class AbsenceJustificationsController < ApplicationController
 
   def fetch_collections
     @unities = Unity.by_teacher(current_teacher_id).ordered
-    @classrooms = Classroom.by_unity_and_teacher(current_user_unity, current_teacher_id)
+    @classrooms = Classroom.by_unity_and_teacher(current_unity, current_teacher_id)
   end
 
   def configuration

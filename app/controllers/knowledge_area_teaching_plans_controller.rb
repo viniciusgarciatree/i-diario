@@ -3,6 +3,7 @@ class KnowledgeAreaTeachingPlansController < ApplicationController
   has_scope :per, default: 10
 
   before_action :require_current_teacher, unless: :current_user_is_employee_or_administrator?
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy]
 
   def index
     params[:filter] ||= {}
@@ -11,8 +12,8 @@ class KnowledgeAreaTeachingPlansController < ApplicationController
 
     @knowledge_area_teaching_plans = apply_scopes(
       KnowledgeAreaTeachingPlan.includes(:knowledge_areas, teaching_plan: [:unity, :grade])
-                               .by_unity(current_user_unity)
-                               .by_year(current_user_school_year)
+                               .by_unity(current_unity)
+                               .by_year(current_school_year)
     )
 
     unless current_user_is_employee_or_administrator?
@@ -53,7 +54,7 @@ class KnowledgeAreaTeachingPlansController < ApplicationController
     @knowledge_area_teaching_plan = KnowledgeAreaTeachingPlan.new.localized
     @knowledge_area_teaching_plan.build_teaching_plan(
       year: current_school_calendar.year,
-      unity: current_user_unity
+      unity: current_unity
     )
 
     authorize @knowledge_area_teaching_plan
@@ -64,6 +65,8 @@ class KnowledgeAreaTeachingPlansController < ApplicationController
   def create
     @knowledge_area_teaching_plan = KnowledgeAreaTeachingPlan.new(resource_params).localized
     @knowledge_area_teaching_plan.teaching_plan.teacher = current_teacher
+    @knowledge_area_teaching_plan.teaching_plan.content_ids = content_ids
+    @knowledge_area_teaching_plan.teaching_plan.objective_ids = objective_ids
     @knowledge_area_teaching_plan.teacher_id = current_teacher_id
     @knowledge_area_teaching_plan.knowledge_area_ids = resource_params[:knowledge_area_ids].split(',')
 
@@ -89,6 +92,8 @@ class KnowledgeAreaTeachingPlansController < ApplicationController
   def update
     @knowledge_area_teaching_plan = KnowledgeAreaTeachingPlan.find(params[:id]).localized
     @knowledge_area_teaching_plan.assign_attributes(resource_params)
+    @knowledge_area_teaching_plan.teaching_plan.content_ids = content_ids
+    @knowledge_area_teaching_plan.teaching_plan.objective_ids = objective_ids
     @knowledge_area_teaching_plan.knowledge_area_ids = resource_params[:knowledge_area_ids].split(',')
     @knowledge_area_teaching_plan.teacher_id = current_teacher_id
     @knowledge_area_teaching_plan.teaching_plan.teacher_id = current_teacher_id
@@ -124,9 +129,25 @@ class KnowledgeAreaTeachingPlansController < ApplicationController
 
   private
 
+  def content_ids
+    param_content_ids = params[:knowledge_area_teaching_plan][:teaching_plan_attributes][:content_ids] || []
+    content_descriptions = params[:knowledge_area_teaching_plan][:teaching_plan_attributes][:content_descriptions] || []
+    new_contents_ids = content_descriptions.map{|v| Content.find_or_create_by!(description: v).id }
+    param_content_ids + new_contents_ids
+  end
+
+  def objective_ids
+    param_objective_ids = params[:knowledge_area_teaching_plan][:teaching_plan_attributes][:objective_ids] || []
+    objective_descriptions =
+      params[:knowledge_area_teaching_plan][:teaching_plan_attributes][:objective_descriptions] || []
+    new_objectives_ids = objective_descriptions.map { |value| Objective.find_or_create_by!(description: value).id }
+    param_objective_ids + new_objectives_ids
+  end
+
   def resource_params
     params.require(:knowledge_area_teaching_plan).permit(
       :knowledge_area_ids,
+      :experience_fields,
       teaching_plan_attributes: [
         :id,
         :year,
@@ -134,17 +155,11 @@ class KnowledgeAreaTeachingPlansController < ApplicationController
         :grade_id,
         :school_term_type,
         :school_term,
-        :objectives,
         :content,
         :methodology,
         :evaluation,
         :references,
         :teacher_id,
-        contents_attributes: [
-          :id,
-          :description,
-          :_destroy
-        ],
         teaching_plan_attachments_attributes: [
           :id,
           :attachment,
@@ -159,16 +174,37 @@ class KnowledgeAreaTeachingPlansController < ApplicationController
   end
 
   def contents
-    Content.ordered
+    @contents = []
+
+    if @knowledge_area_teaching_plan.teaching_plan.contents
+      contents = @knowledge_area_teaching_plan.teaching_plan.contents_ordered
+      contents.each { |content| content.is_editable = true }
+      @contents << contents
+    end
+
+    @contents.flatten.uniq
   end
   helper_method :contents
+
+  def objectives
+    @objectives = []
+
+    if @knowledge_area_teaching_plan.teaching_plan.objectives
+      objectives = @knowledge_area_teaching_plan.teaching_plan.objectives_ordered
+      objectives.each { |objective| objective.is_editable = true }
+      @objectives << objectives
+    end
+
+    @objectives.flatten.uniq
+  end
+  helper_method :objectives
 
   def fetch_unities
     @unities = Unity.by_teacher(current_teacher).ordered
   end
 
   def fetch_grades
-    @grades = Grade.by_unity(current_user_unity).by_year(current_school_calendar.year).ordered
+    @grades = Grade.by_unity(current_unity).by_year(current_school_calendar.year).ordered
 
     return if current_user_is_employee_or_administrator?
 
@@ -176,6 +212,9 @@ class KnowledgeAreaTeachingPlansController < ApplicationController
   end
 
   def fetch_knowledge_areas
-    @knowledge_areas = KnowledgeArea.by_teacher(current_teacher).by_classroom_id(current_user_classroom.id).ordered
+    @knowledge_areas = KnowledgeArea.by_teacher(current_teacher).ordered
+    @knowledge_areas = @knowledge_areas.by_classroom_id(current_user_classroom.id) if current_user_classroom
+
+    @knowledge_areas
   end
 end

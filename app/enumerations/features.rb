@@ -25,23 +25,26 @@ class Features < EnumerateIt::Base
                    :ieducar_api_configurations,
                    :ieducar_api_exam_posting_without_restrictions,
                    :ieducar_api_exam_postings,
+                   :infrequency_trackings,
                    :knowledge_area_content_records,
                    :knowledge_area_lesson_plan_report,
                    :knowledge_area_lesson_plans,
                    :knowledge_area_teaching_plans,
+                   :learning_objectives_and_skills,
                    :observation_diary_records,
                    :observation_record_report,
                    :partial_score_record_report,
+                   :pedagogical_trackings,
                    :roles,
                    :school_calendar_events,
                    :school_calendars,
                    :school_term_recovery_diary_records,
                    :teacher_report_cards,
                    :terms_dictionaries,
-                   :test_settings,
                    :transfer_notes,
                    :unities,
-                   :users
+                   :users,
+                   :translations
 
 
   sort_by :translation

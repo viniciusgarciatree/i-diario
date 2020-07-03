@@ -3,18 +3,15 @@ class ComplementaryExamsController < ApplicationController
   has_scope :per, default: 10
 
   before_action :require_current_teacher
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy]
 
   def index
-    step_id = (params[:filter]||[]).delete(:by_step_id)
+    step_id = (params[:filter] || []).delete(:by_step_id)
 
-    @complementary_exams = apply_scopes(ComplementaryExam)
-      .includes(
-        :complementary_exam_setting,
-        :unity,
-        :classroom,
-        :discipline
-      )
-      .by_unity_id(current_user_unity.id)
+    @complementary_exams =
+      apply_scopes(ComplementaryExam)
+      .includes(:complementary_exam_setting, :unity, :classroom, :discipline)
+      .by_unity_id(current_unity.id)
       .by_classroom_id(current_user_classroom)
       .by_discipline_id(current_user_discipline)
       .ordered
@@ -28,7 +25,7 @@ class ComplementaryExamsController < ApplicationController
 
   def new
     @complementary_exam = ComplementaryExam.new(
-      unity: current_user_unity,
+      unity: current_unity,
       classroom: current_user_classroom,
       discipline: current_user_discipline
     ).localized
@@ -61,6 +58,7 @@ class ComplementaryExamsController < ApplicationController
     @complementary_exam = ComplementaryExam.find(params[:id]).localized
     @complementary_exam.assign_attributes(resource_params)
     @complementary_exam.teacher_id = current_teacher_id
+    @complementary_exam.current_user = current_user
 
     authorize @complementary_exam
 

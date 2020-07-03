@@ -1,7 +1,10 @@
 class DisciplineContentRecord < ActiveRecord::Base
   include Audit
+  include ColumnsLockable
   include TeacherRelationable
+  include Translatable
 
+  not_updatable only: :discipline_id
   teacher_relation_columns only: :discipline
 
   audited associated_with: :content_record,
@@ -14,6 +17,8 @@ class DisciplineContentRecord < ActiveRecord::Base
   accepts_nested_attributes_for :content_record
 
   belongs_to :discipline
+
+  delegate :classroom_id, :classroom, to: :content_record
 
   scope :by_unity_id, lambda { |unity_id| joins(content_record: :classroom).where(Classroom.arel_table[:unity_id].eq(unity_id) ) }
   scope :by_teacher_id, lambda { |teacher_id| joins(:content_record).where(content_records: { teacher_id: teacher_id }) }
@@ -48,6 +53,7 @@ class DisciplineContentRecord < ActiveRecord::Base
   def valid_for_destruction?
     @valid_for_destruction if defined?(@valid_for_destruction)
     @valid_for_destruction = begin
+      content_record.validation_type = :destroy
       content_record.valid?
       forbidden_error = I18n.t('errors.messages.not_allowed_to_post_in_date')
       if content_record.errors[:record_date].include?(forbidden_error)
@@ -75,7 +81,9 @@ class DisciplineContentRecord < ActiveRecord::Base
   end
 
   def ensure_is_school_day
-    return unless content_record.present? && record_date
+    return unless content_record.present? &&
+                  content_record.school_calendar.present? &&
+                  record_date.present?
 
     unless content_record.school_calendar.school_day?(record_date, grade, classroom, discipline)
       errors.add(:base, "")

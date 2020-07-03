@@ -17,6 +17,7 @@ RSpec.describe Api::V2::ContentRecordsController, type: :controller do
 
     before do
       User.current = create(:user, admin: true)
+      request.env['REQUEST_PATH'] = '/api/v2/content_records/sync'
     end
 
     it 'destroys content record when content was not in the params' do
@@ -26,6 +27,7 @@ RSpec.describe Api::V2::ContentRecordsController, type: :controller do
         teacher: teacher_discipline_classroom.teacher,
         classroom_id: teacher_discipline_classroom.classroom_id
       )
+      content_record.not_validate_columns = true
 
       create(
         :discipline_content_record,
@@ -56,6 +58,7 @@ RSpec.describe Api::V2::ContentRecordsController, type: :controller do
         teacher: teacher_discipline_classroom.teacher,
         classroom_id: teacher_discipline_classroom.classroom_id
       )
+      content_record.not_validate_columns = true
 
       create(
         :discipline_content_record,

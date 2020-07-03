@@ -9,7 +9,7 @@ class SchoolCalendarsController < ApplicationController
                                                     .ordered
 
     unless show_all_unities?
-      @school_calendars = @school_calendars.by_unity_id(current_user_unity)
+      @school_calendars = @school_calendars.by_unity_id(current_unity)
     end
 
     authorize @school_calendars
@@ -56,30 +56,11 @@ class SchoolCalendarsController < ApplicationController
     respond_with @school_calendar
   end
 
-  def synchronize
-    begin
-      @school_calendars = SchoolCalendarsParser.parse!(IeducarApiConfiguration.current)
-
-      authorize(SchoolCalendar, :create?)
-      authorize(SchoolCalendar, :update?)
-    rescue SchoolCalendarsParser::ClassroomNotFoundError => error
-      redirect_to edit_ieducar_api_configurations_path, alert: error.to_s
-    end
-  end
-
-  def create_and_update_batch
-    selected_school_calendars(params[:synchronize]).each do |school_calendar|
-      SchoolCalendarSynchronizerService.synchronize(school_calendar)
-    end
-
-    redirect_to school_calendars_path, notice: t('.notice')
-  rescue SchoolCalendarSynchronizerService::InvalidSchoolCalendarError,
-         SchoolCalendarSynchronizerService::InvalidClassroomCalendarError => error
-    redirect_to school_calendars_path, alert: error.message
-  end
-
   def years_from_unity
-    @years = YearsFromUnityFetcher.new(params[:unity_id]).fetch.map{ |year| { id: year, name: year } }
+    only_opened_years = ActiveRecord::Type::Boolean.new.type_cast_from_user(params[:only_opened_years])
+    @years = YearsFromUnityFetcher.new(params[:unity_id], only_opened_years).fetch.map { |year|
+      { id: year, name: year }
+    }
 
     render json: @years
   end
@@ -92,10 +73,6 @@ class SchoolCalendarsController < ApplicationController
   end
 
   private
-
-  def selected_school_calendars(school_calendars)
-    school_calendars.select { |school_calendar| school_calendar[:unity_id].present? }
-  end
 
   def filtering_params(params)
     params = {} unless params
@@ -142,13 +119,17 @@ class SchoolCalendarsController < ApplicationController
 
   def check_user_unity
     return if show_all_unities?
-    return if current_user_unity.try(:id) == resource.unity_id
+    return if current_unity.try(:id) == resource.unity_id
 
     redirect_to(school_calendars_path, alert: I18n.t('school_calendars.invalid_unity'))
   end
 
   def show_all_unities?
-    @show_all_unities ||= current_user.current_user_role.role_administrator?
+    @show_all_unities ||= current_user_role.try(:role_administrator?)
   end
   helper_method :show_all_unities?
+
+  def current_user_role
+    current_user.current_user_role || current_user.user_roles.first
+  end
 end

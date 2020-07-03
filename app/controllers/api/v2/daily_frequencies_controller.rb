@@ -28,6 +28,15 @@ module Api
         creator = DailyFrequenciesCreator.new(frequency_params)
         creator.find_or_create!
 
+        if (daily_frequency = creator.daily_frequencies[0])
+          UniqueDailyFrequencyStudentsCreator.call_worker(
+            current_entity.id,
+            daily_frequency.classroom_id,
+            daily_frequency.frequency_date,
+            current_teacher_id
+          )
+        end
+
         if params[:class_numbers].present?
           render json: creator.daily_frequencies
         else
@@ -49,7 +58,8 @@ module Api
           frequency_date: params[:frequency_date],
           class_numbers: @class_numbers,
           school_calendar: current_school_calendar,
-          period: period
+          period: period,
+          owner_teacher_id: params[:teacher_id]
         }
       end
 

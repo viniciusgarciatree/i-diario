@@ -8,7 +8,9 @@ RSpec.describe ComplementaryExamCalculator, type: :service do
     )
   }
   let(:step) { classroom.calendar.classroom_steps.first }
-  let(:complementary_exam_setting) { create(:complementary_exam_setting, :with_two_grades) }
+  let(:complementary_exam_setting) do
+    create(:complementary_exam_setting, :with_two_grades, :with_teacher_discipline_classroom)
+  end
   let(:complementary_exam) {
     create(
       :complementary_exam,
@@ -48,7 +50,7 @@ RSpec.describe ComplementaryExamCalculator, type: :service do
     end
 
     it 'return complementary_exam score plus value passed as parameter' do
-      expect(subject.calculate(score)).to eq((complementary_exam_student.score + score).to_f)
+      expect(subject.calculate(score).round(4)).to eq((complementary_exam_student.score + score).to_f.round(4))
     end
 
     context 'calculation exceeds test setting maximum score' do

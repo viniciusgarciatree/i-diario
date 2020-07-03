@@ -3,18 +3,13 @@ class AvaliationRecoveryDiaryRecordsController < ApplicationController
   has_scope :per, default: 10
 
   before_action :require_current_teacher
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy]
 
   def index
-    @avaliation_recovery_diary_records = apply_scopes(AvaliationRecoveryDiaryRecord)
-      .includes(
-        :avaliation,
-        recovery_diary_record: [
-          :unity,
-          :classroom,
-          :discipline
-        ]
-      )
-      .by_unity_id(current_user_unity.id)
+    @avaliation_recovery_diary_records =
+      apply_scopes(AvaliationRecoveryDiaryRecord)
+      .includes(:avaliation, recovery_diary_record: [:unity, :classroom, :discipline])
+      .by_unity_id(current_unity.id)
       .by_classroom_id(current_user_classroom)
       .by_discipline_id(current_user_discipline)
       .ordered
@@ -29,11 +24,19 @@ class AvaliationRecoveryDiaryRecordsController < ApplicationController
   def new
     @avaliation_recovery_diary_record = AvaliationRecoveryDiaryRecord.new.localized
     @avaliation_recovery_diary_record.build_recovery_diary_record
-    @avaliation_recovery_diary_record.recovery_diary_record.unity = current_user_unity
+    @avaliation_recovery_diary_record.recovery_diary_record.unity = current_unity
 
     @unities = fetch_unities
     @classrooms = fetch_classrooms
     @school_calendar_steps = current_school_calendar.steps
+
+    if current_test_setting.blank?
+      flash[:error] = t('errors.avaliations.require_setting')
+
+      redirect_to(avaliation_recovery_diary_records_path)
+    end
+
+    return if performed?
 
     @number_of_decimal_places = current_test_setting.number_of_decimal_places
   end
@@ -53,7 +56,7 @@ class AvaliationRecoveryDiaryRecordsController < ApplicationController
       @school_calendar_steps = current_school_calendar.steps
       @student_notes = fetch_student_notes
       @number_of_decimal_places = current_test_setting.number_of_decimal_places
-      reload_students_list
+      reload_students_list if daily_note_students.present?
 
       render :new
     end
@@ -82,6 +85,7 @@ class AvaliationRecoveryDiaryRecordsController < ApplicationController
     @avaliation_recovery_diary_record = AvaliationRecoveryDiaryRecord.find(params[:id]).localized
     @avaliation_recovery_diary_record.assign_attributes(resource_params)
     @avaliation_recovery_diary_record.recovery_diary_record.teacher_id = current_teacher_id
+    @avaliation_recovery_diary_record.recovery_diary_record.current_user = current_user
 
     authorize @avaliation_recovery_diary_record
 

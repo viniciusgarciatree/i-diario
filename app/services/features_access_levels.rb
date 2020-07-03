@@ -38,7 +38,6 @@ class FeaturesAccessLevels
       :school_calendar_events,
       :school_calendars,
       :school_term_recovery_diary_records,
-      :test_settings,
       :transfer_notes,
       :teacher_report_cards,
       :complementary_exams,
@@ -64,6 +63,7 @@ class FeaturesAccessLevels
   end
 
   private
+
   def self.admin_only_features
     [
       :data_exportations,
@@ -71,7 +71,9 @@ class FeaturesAccessLevels
       :general_configurations,
       :roles,
       :unities,
-      :terms_dictionaries
+      :terms_dictionaries,
+      :translations,
+      :learning_objectives_and_skills
     ]
   end
 end

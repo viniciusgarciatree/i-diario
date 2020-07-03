@@ -1,3 +1,6 @@
+AllCops:
+  TargetRailsVersion: 4.2
+
 Metrics/AbcSize:
   Enabled: false
 
@@ -36,3 +39,6 @@ Style/SymbolArray:
 
 Style/WordArray:
   EnforcedStyle: brackets
+
+Style/FrozenStringLiteralComment:
+  Enabled: false

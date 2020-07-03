@@ -2,6 +2,7 @@ require 'sidekiq/web'
 
 Rails.application.routes.draw do
   mount Sidekiq::Web => '/sidekiq'
+  mount PgHero::Engine, at: 'pghero'
 
   get 'worker-processses-status', to: 'sidekiq_monitor#processes_status'
 
@@ -44,6 +45,7 @@ Rails.application.routes.draw do
       namespace :v2 do
         resources :exam_rules, only: [:index]
         get 'step_activity', to: 'step_activity#check'
+        get 'discipline_activity', to: 'discipline_activity#check'
         resources :teacher_unities, only: [:index]
         resources :teacher_classrooms, only: [:index] do
           collection do
@@ -91,6 +93,7 @@ Rails.application.routes.draw do
       collection do
         get :search_api
         get :in_recovery
+        get :select2_remote
         get :in_final_recovery, path: '/in_final_recovery/classrooms/:classroom_id/disciplines/:discipline_id'
       end
     end
@@ -111,7 +114,6 @@ Rails.application.routes.draw do
     patch '/current_role', to: 'current_role#set', as: :set_current_role
     post '/system_notifications/read_all', to: 'system_notifications#read_all', as: :read_all_notifications
     get '/disabled_entity', to: 'pages#disabled_entity'
-    get '/new_role_modal_feature', to: 'news#role_modal_feature'
 
     resources :users, concerns: :history do
       collection do
@@ -125,11 +127,16 @@ Rails.application.routes.draw do
     resources :roles do
       member do
         get :history
+        get :fetch_features
       end
     end
     resources  :user_roles, only: [:show]
     resource :ieducar_api_configurations, only: [:edit, :update], concerns: :history do
-      resources :synchronizations, only: [:index, :create]
+      resources :synchronizations, only: [:index, :create] do
+        collection do
+          get :current_syncronization_data
+        end
+      end
     end
     resource :general_configurations, only: [:edit, :update], concerns: :history
     resource :entity_configurations, only: [:edit, :update], concerns: :history
@@ -139,8 +146,6 @@ Rails.application.routes.draw do
     resources :unities, concerns: :history do
       collection do
         delete :destroy_batch
-        get :synchronizations
-        post :create_batch
         get :search
         get :all
         get :select2_remote
@@ -169,8 +174,6 @@ Rails.application.routes.draw do
     resources :school_calendars, concerns: :history do
       collection do
         get :step
-        get :synchronize
-        post :create_and_update_batch
         get :years_from_unity
       end
 
@@ -187,14 +190,28 @@ Rails.application.routes.draw do
 
     resources :discipline_teaching_plans, concerns: :history
     resources :knowledge_area_teaching_plans, concerns: :history
+    resources :learning_objectives_and_skills, concerns: :history do
+      collection do
+        get :contents
+      end
+    end
+
+    get '/pedagogical_trackings', as: :pedagogical_trackings, to: 'pedagogical_trackings#index'
+    get '/pedagogical_trackings_teachers', as: :pedagogical_trackings_teachers, to: 'pedagogical_trackings#teachers'
+    get '/translations', as: :translations, to: 'translations#form'
+    post '/translations', as: :save_translations, to: 'translations#save'
     resources :discipline_lesson_plans, concerns: :history do
       collection do
         post :clone
+        get :teaching_plan_contents
+        get :teaching_plan_objectives
       end
     end
     resources :knowledge_area_lesson_plans, concerns: :history do
       collection do
         post :clone
+        get :teaching_plan_contents
+        get :teaching_plan_objectives
       end
     end
     resources :discipline_content_records, concerns: :history do
@@ -266,7 +283,7 @@ Rails.application.routes.draw do
     resources :daily_frequencies, only: [:new, :create], concerns: :history do
       collection do
         get :edit_multiple
-        put :update_multiple
+        put :create_or_update_multiple
         delete :destroy_multiple
       end
     end
@@ -286,6 +303,8 @@ Rails.application.routes.draw do
         post :create_or_update
       end
     end
+
+    resources :infrequency_trackings, only: :index
 
     resources :student_enrollments, only: [:index]
     resources :student_enrollments_lists, only: [:index] do

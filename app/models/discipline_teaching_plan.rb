@@ -1,7 +1,10 @@
 class DisciplineTeachingPlan < ActiveRecord::Base
   include Audit
+  include ColumnsLockable
   include TeacherRelationable
+  include Translatable
 
+  not_updatable only: :discipline_id
   teacher_relation_columns only: :discipline
 
   audited
@@ -13,6 +16,7 @@ class DisciplineTeachingPlan < ActiveRecord::Base
   belongs_to :discipline
 
   delegate :contents, to: :teaching_plan
+  delegate :objectives, to: :teaching_plan
 
   accepts_nested_attributes_for :teaching_plan
 

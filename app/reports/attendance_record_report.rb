@@ -5,7 +5,19 @@ class AttendanceRecordReport < BaseReport
   # This factor represent the quantitty of students with social name needed to reduce 1 student by page
   SOCIAL_NAME_REDUCTION_FACTOR = 2
 
-  def self.build(entity_configuration, teacher, year, start_at, end_at, daily_frequencies, student_enrollments, events, school_calendar, second_teacher_signature)
+  def self.build(
+    entity_configuration,
+    teacher,
+    year,
+    start_at,
+    end_at,
+    daily_frequencies,
+    student_enrollments,
+    events,
+    school_calendar,
+    second_teacher_signature,
+    display_knowledge_area_as_discipline
+  )
     new(:landscape)
       .build(entity_configuration,
              teacher,
@@ -16,10 +28,23 @@ class AttendanceRecordReport < BaseReport
              student_enrollments,
              events,
              school_calendar,
-             second_teacher_signature)
+             second_teacher_signature,
+             display_knowledge_area_as_discipline)
   end
 
-  def build(entity_configuration, teacher, year, start_at, end_at, daily_frequencies, student_enrollments, events, school_calendar, second_teacher_signature)
+  def build(
+    entity_configuration,
+    teacher,
+    year,
+    start_at,
+    end_at,
+    daily_frequencies,
+    student_enrollments,
+    events,
+    school_calendar,
+    second_teacher_signature,
+    display_knowledge_area_as_discipline
+  )
     @entity_configuration = entity_configuration
     @teacher = teacher
     @year = year
@@ -30,7 +55,9 @@ class AttendanceRecordReport < BaseReport
     @events = events
     @school_calendar = school_calendar
     @second_teacher_signature = ActiveRecord::Type::Boolean.new.type_cast_from_user(second_teacher_signature)
-
+    @display_knowledge_area_as_discipline = ActiveRecord::Type::Boolean.new.type_cast_from_user(
+      display_knowledge_area_as_discipline
+    )
     self.legend = "Legenda: N - Não enturmado, D - Dispensado da disciplina"
 
     header
@@ -42,7 +69,7 @@ class AttendanceRecordReport < BaseReport
 
   protected
 
-  attr_accessor :any_student_with_dependence, :legend
+  attr_accessor :any_student_with_dependence, :legend, :extra_school_event_description
 
   private
 
@@ -199,7 +226,8 @@ class AttendanceRecordReport < BaseReport
         sequence += 1
       end
 
-      bottom_offset = @second_teacher_signature ? 24 : 0
+      bottom_offset = @second_teacher_signature ? 8 : 0
+      bottom_offset += 16 if show_school_day_event_description?
       sliced_students_cells = students_cells.each_slice(student_slice_size(students)).to_a
 
       sliced_students_cells.each_with_index do |students_cells_slice, slice_index|
@@ -234,17 +262,33 @@ class AttendanceRecordReport < BaseReport
           end
         end
 
-        text_box(self.legend, size: 8, at: [0, 30 + bottom_offset], width: 825, height: 20)
+        draw_bottom(bottom_offset)
 
         start_new_page if slice_index < sliced_students_cells.count - 1
       end
 
-      text_box(self.legend, size: 8, at: [0, 30 + bottom_offset], width: 825, height: 20)
+      draw_bottom(bottom_offset)
 
       self.legend = "Legenda: N - Não enturmado, D - Dispensado da disciplina"
 
       start_new_page if index < sliced_frequencies_and_events.count - 1
     end
+  end
+
+  def draw_bottom(bottom_offset)
+    legend_extra_offset = 50
+    event_extra_offset = 30
+
+    unless @second_teacher_signature
+      legend_extra_offset -= 20
+      event_extra_offset -= 20
+    end
+
+    text_box(self.legend, size: 8, at: [0, legend_extra_offset + bottom_offset], width: 825, height: 20)
+
+    return unless show_school_day_event_description?
+
+    text_box(format_legend(extra_school_event), size: 8, at: [0, event_extra_offset + bottom_offset], width: 825, height: 20)
   end
 
   def content
@@ -307,7 +351,11 @@ class AttendanceRecordReport < BaseReport
     second_signature_offset = @second_teacher_signature ? 3 : 0
     social_name_factor = (student_with_social_name_count / SOCIAL_NAME_REDUCTION_FACTOR)
 
-    STUDENT_BY_PAGE_COUNT - second_signature_offset - social_name_factor
+    slice_size = STUDENT_BY_PAGE_COUNT - second_signature_offset - social_name_factor
+
+    return slice_size unless show_school_day_event_description?
+
+    slice_size - 3
   end
 
   def step_number(daily_frequency)
@@ -324,7 +372,10 @@ class AttendanceRecordReport < BaseReport
 
   def discipline_display
     return 'Geral' if general_frequency?
-    return knowledge_area.to_s if display_knowledge_area_as_discipline?
+
+    if @display_knowledge_area_as_discipline && display_knowledge_area_as_discipline?
+      return knowledge_area.to_s
+    end
 
     discipline.to_s
   end
@@ -359,5 +410,27 @@ class AttendanceRecordReport < BaseReport
 
   def classroom
     @classroom ||= @daily_frequencies.first.classroom
+  end
+
+  def extra_school_event
+    @extra_school_event ||= @school_calendar.events.find { |event|
+      event.event_type == EventTypes::EXTRA_SCHOOL &&
+        event.show_in_frequency_record &&
+        report_include_event_date?(event)
+    }
+  end
+
+  def show_school_day_event_description?
+    return false unless extra_school_event
+
+    true
+  end
+
+  def report_include_event_date?(event)
+    ((event.start_date..event.end_date).to_a & (@start_at.to_date..@end_at.to_date).to_a).any?
+  end
+
+  def format_legend(event)
+    "#{event.description}: #{event.start_date.strftime('%d/%m/%Y')} à #{event.end_date.strftime('%d/%m/%Y')}"
   end
 end

@@ -3,6 +3,8 @@ class KnowledgeAreaLessonPlansController < ApplicationController
   has_scope :per, default: 10
 
   before_action :require_current_teacher
+  before_action :require_current_clasroom, only: [:new, :edit, :create, :update]
+  before_action :require_allow_to_modify_prev_years, only: [:create, :update, :destroy, :clone]
 
   def index
     params[:filter] ||= {}
@@ -45,6 +47,10 @@ class KnowledgeAreaLessonPlansController < ApplicationController
         )
         send_pdf(t('routes.knowledge_area_lesson_plans'), knowledge_area_lesson_plan_pdf.render)
       end
+
+      format.html do
+        redirect_to knowledge_area_lesson_plans_path
+      end
     end
   end
 
@@ -68,6 +74,8 @@ class KnowledgeAreaLessonPlansController < ApplicationController
     @knowledge_area_lesson_plan.assign_attributes(resource_params)
     @knowledge_area_lesson_plan.knowledge_area_ids = resource_params[:knowledge_area_ids].split(',')
     @knowledge_area_lesson_plan.lesson_plan.school_calendar = current_school_calendar
+    @knowledge_area_lesson_plan.lesson_plan.content_ids = content_ids
+    @knowledge_area_lesson_plan.lesson_plan.objective_ids = objective_ids
     @knowledge_area_lesson_plan.lesson_plan.teacher = current_teacher
     @knowledge_area_lesson_plan.teacher_id = current_teacher_id
 
@@ -97,6 +105,8 @@ class KnowledgeAreaLessonPlansController < ApplicationController
   def update
     @knowledge_area_lesson_plan = KnowledgeAreaLessonPlan.find(params[:id])
     @knowledge_area_lesson_plan.assign_attributes(resource_params)
+    @knowledge_area_lesson_plan.lesson_plan.content_ids = content_ids
+    @knowledge_area_lesson_plan.lesson_plan.objective_ids = objective_ids
     @knowledge_area_lesson_plan.knowledge_area_ids = resource_params[:knowledge_area_ids].split(',')
     @knowledge_area_lesson_plan.teacher_id = current_teacher_id
 
@@ -135,12 +145,52 @@ class KnowledgeAreaLessonPlansController < ApplicationController
     flash[:success] = t('messages.copy_succeed') if @form.clone!
   end
 
+  def teaching_plan_contents
+    @teaching_plan_contents = KnowledgeAreaTeachingPlanContentsFetcher.new(
+      current_teacher,
+      current_user_classroom,
+      params[:knowledge_area_ids],
+      params[:start_date],
+      params[:end_date]
+    ).fetch
+
+    respond_with(@teaching_plan_contents)
+  end
+
+  def teaching_plan_objectives
+    @teaching_plan_objectives = KnowledgeAreaTeachingPlanObjectivesFetcher.new(
+      current_teacher,
+      current_user_classroom,
+      params[:knowledge_area_ids],
+      params[:start_date],
+      params[:end_date]
+    ).fetch
+
+    respond_with(@teaching_plan_objectives)
+  end
+
   private
+
+  def content_ids
+    param_content_ids = params[:knowledge_area_lesson_plan][:lesson_plan_attributes][:content_ids] || []
+    content_descriptions = params[:knowledge_area_lesson_plan][:lesson_plan_attributes][:content_descriptions] || []
+    new_contents_ids = content_descriptions.map{|v| Content.find_or_create_by!(description: v).id }
+    param_content_ids + new_contents_ids
+  end
+
+  def objective_ids
+    param_objective_ids = params[:knowledge_area_lesson_plan][:lesson_plan_attributes][:objective_ids] || []
+    objective_descriptions =
+      params[:knowledge_area_lesson_plan][:lesson_plan_attributes][:objective_descriptions] || []
+    new_objectives_ids = objective_descriptions.map { |value| Objective.find_or_create_by!(description: value).id }
+    param_objective_ids + new_objectives_ids
+  end
 
   def resource_params
     params.require(:knowledge_area_lesson_plan).permit(
       :lesson_plan_id,
       :knowledge_area_ids,
+      :experience_fields,
       lesson_plan_attributes: [
         :id,
         :school_calendar_id,
@@ -148,19 +198,12 @@ class KnowledgeAreaLessonPlansController < ApplicationController
         :classroom_id,
         :start_at,
         :end_at,
-        :contents,
         :activities,
-        :objectives,
         :resources,
         :evaluation,
         :bibliography,
         :opinion,
         :teacher_id,
-        contents_attributes: [
-          :id,
-          :description,
-          :_destroy
-        ],
         lesson_plan_attachments_attributes: [
           :id,
           :attachment,
@@ -181,9 +224,32 @@ class KnowledgeAreaLessonPlansController < ApplicationController
   end
 
   def contents
-    Content.ordered
+    @contents = []
+
+    if params[:action] == 'edit'
+      @contents = @knowledge_area_lesson_plan.lesson_plan.contents_ordered if @knowledge_area_lesson_plan.contents
+    else
+      @contents = Content.find(@knowledge_area_lesson_plan.lesson_plan.content_ids)
+    end
+
+    @contents = @contents.each { |content| content.is_editable = true }.uniq
   end
   helper_method :contents
+
+  def objectives
+    @objectives = []
+
+    if params[:action] == 'edit'
+      if @knowledge_area_lesson_plan.lesson_plan.objectives
+        @objectives = @knowledge_area_lesson_plan.lesson_plan.objectives_ordered
+      end
+    else
+      @objectives = Objective.find(@knowledge_area_lesson_plan.lesson_plan.objective_ids)
+    end
+
+    @objectives = @objectives.each { |objective| objective.is_editable = true }.uniq
+  end
+  helper_method :objectives
 
   def fetch_unities
     Unity.by_teacher(current_teacher.id).ordered
@@ -194,6 +260,9 @@ class KnowledgeAreaLessonPlansController < ApplicationController
   end
 
   def fetch_knowledge_area
-    KnowledgeArea.by_teacher(current_teacher).by_classroom_id(current_user_classroom.id).ordered
+    knowledge_areas = KnowledgeArea.by_teacher(current_teacher).ordered
+    knowledge_areas = knowledge_areas.by_classroom_id(current_user_classroom.id) if current_user_classroom
+
+    knowledge_areas
   end
 end

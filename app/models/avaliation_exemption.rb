@@ -1,5 +1,10 @@
 class AvaliationExemption < ActiveRecord::Base
   include Discardable
+  include ColumnsLockable
+  include TeacherRelationable
+
+  not_updatable only: [:classroom_id, :discipline_id]
+  teacher_relation_columns only: [:classroom, :discipline]
 
   acts_as_copy_target
 
@@ -66,8 +71,9 @@ class AvaliationExemption < ActiveRecord::Base
 
   scope :by_student_name, lambda { |student_name|
     joins(:student).where(
-      "(unaccent(students.name) ILIKE unaccent('%#{student_name}%') or
-        unaccent(students.social_name) ILIKE unaccent('%#{student_name}%'))"
+      "(unaccent(students.name) ILIKE unaccent(:student_name) or
+        unaccent(students.social_name) ILIKE unaccent(:student_name))",
+      student_name: "%#{student_name}%"
     )
   }
 
