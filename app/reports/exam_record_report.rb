@@ -63,8 +63,9 @@ class ExamRecordReport < BaseReport
 
   def header
     exam_header = make_cell(content: 'Registro de avaliações', size: 12, font_style: :bold, background_color: 'DEDEDE', height: 20, padding: [2, 2, 4, 4], align: :center, colspan: 5)
+    @logoimg = File.expand_path(File.dirname(File.dirname(__FILE__))) + '/../public/' + @entity_configuration.logo.url
     begin
-      logo_cell = make_cell(image: open(@entity_configuration.logo.url), fit: [50, 50], width: 70, rowspan: 4, position: :center, vposition: :center)
+      logo_cell = make_cell(image: open(@logoimg), fit: [50, 50], width: 70, rowspan: 4, position: :center, vposition: :center)
     rescue
       logo_cell = make_cell(content: '', width: 70, rowspan: 4)
     end
