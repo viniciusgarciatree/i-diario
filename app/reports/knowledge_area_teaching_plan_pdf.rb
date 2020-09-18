@@ -38,8 +38,9 @@ class KnowledgeAreaTeachingPlanPdf < BaseReport
     )
 
     begin
+      @logoimg = File.expand_path(File.dirname(File.dirname(__FILE__))) + '/../public/' + @entity_configuration.logo.url
       entity_logo_cell = make_cell(
-        image: open(@entity_configuration.logo.url),
+        image: open(@logoimg),
         fit: [50, 50],
         width: 70,
         rowspan: 4,
