@@ -37,8 +37,9 @@ class KnowledgeAreaLessonPlanReport < BaseReport
     )
 
     begin
+      @logoimg = File.expand_path(File.dirname(File.dirname(__FILE__))) + '/../public/' + @entity_configuration.logo.url
       entity_logo_cell = make_cell(
-        image: open(@entity_configuration.logo.url),
+        image: open(@logoimg),
         fit: [50, 50],
         width: 70,
         rowspan: 4,
@@ -106,7 +107,7 @@ class KnowledgeAreaLessonPlanReport < BaseReport
     @plan_date_header = make_cell(content: 'Data', size: 8, font_style: :bold, borders: [:left, :right, :top], background_color: 'FFFFFF', width: 60, padding: [2, 2, 4, 4])
     @classroom_header = make_cell(content: 'Turma', size: 8, font_style: :bold, borders: [:left, :right, :top], background_color: 'FFFFFF', padding: [2, 2, 4, 4])
     @knowledge_area_header = make_cell(content: 'Áreas de conhecimento', size: 8, font_style: :bold, borders: [:left, :right, :top], background_color: 'FFFFFF', padding: [2, 2, 4, 4])
-    @content_header = make_cell(content: 'Conteúdos', size: 8, font_style: :bold, borders: [:left, :right, :top], background_color: 'FFFFFF', padding: [2, 2, 4, 4])
+    @content_header = make_cell(content: Translator.t('activerecord.attributes.knowledge_area_content_record.contents'), size: 8, font_style: :bold, borders: [:left, :right, :top], background_color: 'FFFFFF', padding: [2, 2, 4, 4])
     @period_header = make_cell(content: 'Período', size: 8, font_style: :bold, borders: [:left, :right, :top], background_color: 'FFFFFF', padding: [2, 2, 4, 4])
     @start_at_header = make_cell(content: 'Data inicial', size: 8, font_style: :bold, borders: [:left, :right, :top], background_color: 'FFFFFF', padding: [2, 2, 4, 4])
     @end_date_header = make_cell(content: 'Data final', size: 8, font_style: :bold, borders: [:left, :right, :top], background_color: 'FFFFFF', padding: [2, 2, 4, 4])
