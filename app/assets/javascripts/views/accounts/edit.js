@@ -74,16 +74,16 @@ $(function() {
         });
 
         if (canvas) {
-          initialAvatarURL = avatar.src;
-          avatar.src = canvas.toDataURL();
-          if(menu_avatar == undefined) {
-              menu_avatar = avatar;
-          }else{
-              menu_avatar.src = avatar.src;
-          }
+            initialAvatarURL = avatar.src;
+            avatar.src = canvas.toDataURL();
+            if(menu_avatar == undefined) {
+                menu_avatar = avatar;
+            }else{
+                menu_avatar.src = avatar.src;
+            }
 
-          $alert.removeClass('alert-success alert-warning');
-          canvas.toBlob(function (blob) {
+            $alert.removeClass('alert-success alert-warning');
+            canvas.toBlob(function (blob) {
             var formData = new FormData();
             var userId = $('#user_id').val();
 
