@@ -14,6 +14,7 @@ $(function() {
   window.addEventListener('DOMContentLoaded', function () {
     var avatar = $('#profile-picture-prev')[0];
     var menu_avatar = $('#menu_avatar')[0];
+	  debugger;
     var image = $('#profile-image')[0];
     var input = $('#profile-picture-input')[0];
 
@@ -75,7 +76,11 @@ $(function() {
         if (canvas) {
           initialAvatarURL = avatar.src;
           avatar.src = canvas.toDataURL();
-          menu_avatar.src = canvas.toDataURL();
+	  if(menu_avatar == undefined){
+              menu_avatar = avatar;
+	  }else{
+              menu_avatar.src = avatar.src;
+          }
 
           $alert.removeClass('alert-success alert-warning');
           canvas.toBlob(function (blob) {

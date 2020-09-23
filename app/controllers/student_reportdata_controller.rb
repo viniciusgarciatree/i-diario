@@ -1,0 +1,2 @@
+class StudentReportdataController < ApplicationController
+end

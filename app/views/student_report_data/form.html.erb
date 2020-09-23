@@ -1,0 +1,34 @@
+<% content_for :js do %>
+  <%= javascript_include_tag 'views/student_report_data/form' %>
+<% end %>
+<div class="widget-body no-padding">
+  <%= simple_form_for @student_report_data_form, url: student_report_data_path, method: :post, html: { class: "smart-form", target: '_blank' } do |f| %>
+    <%= f.error_notification unless @student_report_data_form.errors[:base].any? %>
+    <div class="alert alert-danger <%= 'hidden' unless @student_report_data_form.errors[:base].any? %>">
+      <i class="fa fa-exclamation-circle fa-fw"></i>
+      <%= @student_report_data_form.errors[:base].first %>
+    </div>
+
+    <fieldset>
+      <div class="row">
+        <div class="col col-sm-4">
+          <%= f.input :unity_id, as: :select2_unity, user: current_user %>
+        </div>
+        <div class="col col-sm-4">
+          <%= f.input :classroom_id, as: :select2_classroom, user: current_user, input_html: { value: @student_report_data_form.classroom_id } %>
+        </div>
+	      <div class="col col-sm-3">
+		      <%= f.input(
+                          :student_id,
+                          as: :select2
+                        ) %>
+        </div>
+      </div>
+    </fieldset>
+
+    <footer>
+      <%= f.submit 'Imprimir', class: 'btn btn-primary' %>
+    </footer>
+  <% end %>
+</div>
+
