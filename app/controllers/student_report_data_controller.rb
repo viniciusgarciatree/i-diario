@@ -28,7 +28,7 @@ class StudentReportDataController < ApplicationController
         course_id: course.api_code,
         grade_id: grade.api_code,
         classroom_id: classroom.api_code,
-	student_id: student.api_code,
+	    student_id: student.api_code,
         ano: year
       })
       send_pdf(t("routes.student_report_data"), report)

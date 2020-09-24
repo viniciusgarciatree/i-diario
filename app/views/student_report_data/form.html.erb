@@ -17,11 +17,8 @@
         <div class="col col-sm-4">
           <%= f.input :classroom_id, as: :select2_classroom, user: current_user, input_html: { value: @student_report_data_form.classroom_id } %>
         </div>
-	      <div class="col col-sm-3">
-		      <%= f.input(
-                          :student_id,
-                          as: :select2
-                        ) %>
+	    <div class="col col-sm-3">
+	      <%= f.input(:student_id, as: :select2 ) %>
         </div>
       </div>
     </fieldset>
