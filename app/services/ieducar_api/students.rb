@@ -44,6 +44,7 @@ module IeducarApi
       raise ApiError, 'É necessário informar a série' if params[:grade_id].blank?
       raise ApiError, 'É necessário informar a turma' if params[:classroom_id].blank?
       #raise ApiError, 'É necessário informar a aluno' if params[:student_id].blank?
+      raise ApiError, 'É necessário informar o ano: year' if params[:year].blank?
 
       params['escola_id'] = params.delete(:unity_id)
       params['curso_id'] = params.delete(:course_id)
