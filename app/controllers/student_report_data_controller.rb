@@ -21,7 +21,7 @@ class StudentReportDataController < ApplicationController
       grade = classroom.grade
       course = grade.course
       year = current_school_calendar.year
-      if @student_report_data_form.student_id.nil != ""
+      if @student_report_data_form.student_id != ""
          student = Student.find(@student_report_data_form.student_id)
          report = student_report_data.build({
                  unity_id: unity.api_code,
