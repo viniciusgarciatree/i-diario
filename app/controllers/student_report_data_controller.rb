@@ -21,16 +21,28 @@ class StudentReportDataController < ApplicationController
       grade = classroom.grade
       course = grade.course
       year = current_school_calendar.year
-      student = Student.find(@student_report_data_form.student_id)
+      if @student_report_data_form.student_id.nil != ""
+         student = Student.find(@student_report_data_form.student_id)
+         report = student_report_data.build({
+                 unity_id: unity.api_code,
+                 course_id: course.api_code,
+                 grade_id: grade.api_code,
+                 classroom_id: classroom.api_code,
+         	    student_id: student.api_code,
+                 ano: year
+               })
+      else
+         report = student_report_data.build({
+                 unity_id: unity.api_code,
+                 course_id: course.api_code,
+                 grade_id: grade.api_code,
+                 classroom_id: classroom.api_code,
+         	    student_id: '',
+                 ano: year
+               })
+      end
 
-      report = student_report_data.build({
-        unity_id: unity.api_code,
-        course_id: course.api_code,
-        grade_id: grade.api_code,
-        classroom_id: classroom.api_code,
-	    student_id: student.api_code,
-        ano: year
-      })
+
       send_pdf(t("routes.student_report_data"), report)
     else
       render :form
