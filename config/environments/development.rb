@@ -1,4 +1,7 @@
 Rails.application.configure do
+  config.web_console.whitelisted_ips = '192.168.3.0/25'
+  # E
+  # E
   # Settings specified here will take precedence over those in config/application.rb.
 
   # In the development environment your application's code is reloaded on
@@ -63,4 +66,5 @@ Rails.application.configure do
   Paperclip::Attachment.default_options[:fog_credentials] = { provider: "Local", local_root: "#{Rails.root}/public/system"}
   Paperclip::Attachment.default_options[:fog_directory] = ""
   Paperclip::Attachment.default_options[:fog_host] = "http://localhost:3000"
+
 end
