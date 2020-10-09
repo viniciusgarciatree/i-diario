@@ -40,6 +40,7 @@ class Features < EnumerateIt::Base
                    :school_calendars,
                    :school_term_recovery_diary_records,
                    :teacher_report_cards,
+		   :student_report_data,
                    :terms_dictionaries,
                    :transfer_notes,
                    :unities,

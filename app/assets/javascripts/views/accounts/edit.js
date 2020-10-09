@@ -14,6 +14,7 @@ $(function() {
   window.addEventListener('DOMContentLoaded', function () {
     var avatar = $('#profile-picture-prev')[0];
     var menu_avatar = $('#menu_avatar')[0];
+	  debugger;
     var image = $('#profile-image')[0];
     var input = $('#profile-picture-input')[0];
 

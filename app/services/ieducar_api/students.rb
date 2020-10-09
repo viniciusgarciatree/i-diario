@@ -34,5 +34,25 @@ module IeducarApi
 
       fetch(params)
     end
+
+    def fetch_student_report_data(params = {})
+      params[:path] = 'module/Api/Report'
+      params[:resource] = 'alunos-dados-familiares'
+
+      raise ApiError, 'É necessário informar a escola' if params[:unity_id].blank?
+      raise ApiError, 'É necessário informar o curso' if params[:course_id].blank?
+      raise ApiError, 'É necessário informar a série' if params[:grade_id].blank?
+      raise ApiError, 'É necessário informar a turma' if params[:classroom_id].blank?
+      #raise ApiError, 'É necessário informar a aluno' if params[:student_id].blank?
+
+      params['escola_id'] = params.delete(:unity_id)
+      params['curso_id'] = params.delete(:course_id)
+      params['serie_id'] = params.delete(:grade_id)
+      params['turma_id'] = params.delete(:classroom_id)
+      params['aluno_id'] = params.delete(:student_id)
+      params['ano'] = params.delete(:year)
+
+      fetch(params)
+    end
   end
 end

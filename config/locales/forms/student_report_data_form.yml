@@ -1,0 +1,7 @@
+pt-BR:
+  activemodel:
+    attributes:
+      student_report_data_form:
+        unity_id: "Escola"
+        classroom_id: "Turma"
+        student_id: "Aluno"
