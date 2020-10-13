@@ -14,15 +14,15 @@ navigation:
       type: "administrative"
       icon: "fa-tasks"
       submenus:
-        - menu:
-            type: "admin_synchronizations"
-            path: "admin_synchronizations_path"
+#        - menu:
+#            type: "admin_synchronizations"
+#            path: "admin_synchronizations_path"
         - menu:
             type: "general_configurations"
             path: "edit_general_configurations_path"
-        - menu:
-            type: "maintenance_adjustments"
-            path: "maintenance_adjustments_path"
+#        - menu:
+#            type: "maintenance_adjustments"
+#            path: "maintenance_adjustments_path"
   - menu:
       type: "configurations"
       icon: "fa-cog"
