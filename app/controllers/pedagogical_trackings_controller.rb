@@ -180,6 +180,10 @@ class PedagogicalTrackingsController < ApplicationController
     @done_frequencies = @done_frequencies.by_teacher_id(teacher_id) if teacher_id
     @done_frequencies = @done_frequencies.group_by(&:frequency_date).size
 
+    if @done_frequencies > school_days
+      school_days = @done_frequencies
+    end
+
     ((@done_frequencies * 100).to_f / school_days).round(2)
   end
 
