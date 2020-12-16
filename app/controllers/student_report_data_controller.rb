@@ -4,7 +4,6 @@ class StudentReportDataController < ApplicationController
   def form
     @student_report_data_form = StudentReportDataForm.new(unity_id: current_unity.id)
     authorize(StudentReportData, :show?)
-    authorize @student_report_data_form
   end
 
   def report
