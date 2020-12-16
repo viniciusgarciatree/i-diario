@@ -40,6 +40,7 @@ class FeaturesAccessLevels
       :school_term_recovery_diary_records,
       :transfer_notes,
       :teacher_report_cards,
+      :student_report_data,
       :complementary_exams,
       :ieducar_api_exam_posting_without_restrictions,
       :change_school_year
