@@ -19,7 +19,7 @@ class StudentReportDataController < ApplicationController
       classroom = Classroom.find(@student_report_data_form.classroom_id)
       grade = classroom.grade
       course = grade.course
-      year = current_school_calendar.year
+      year = current_school_year
       if @student_report_data_form.student_id != ""
          student = Student.find(@student_report_data_form.student_id)
          report = student_report_data.build({
