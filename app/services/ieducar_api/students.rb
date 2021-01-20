@@ -25,7 +25,6 @@ module IeducarApi
       raise ApiError, 'É necessário informar a data: date' if params[:date].blank?
 
       params['escola_id'] = params.delete(:unity_api_code)
-      params['ano'] = params.delete(:year)
       params['data'] = params.delete(:date)
       params['curso_id'] = params.delete(:course_api_code)
       params['serie_id'] = params.delete(:grade_api_code)
@@ -50,7 +49,6 @@ module IeducarApi
       params['serie_id'] = params.delete(:grade_id)
       params['turma_id'] = params.delete(:classroom_id)
       params['aluno_id'] = params.delete(:student_id)
-      params['ano'] = params.delete(:year)
 
       fetch(params)
     end
