@@ -185,6 +185,7 @@ class PedagogicalTrackingsController < ApplicationController
     end
 
     return 0 if school_days.zero?
+    return 100 if school_days < @done_frequencies ?
 
     ((@done_frequencies * 100).to_f / school_days).round(2)
   end
@@ -205,6 +206,7 @@ class PedagogicalTrackingsController < ApplicationController
     @done_content_records = @done_content_records.group_by(&:record_date).size
 
     return 0 if school_days.zero?
+    return 100 if school_days < @done_content_records ?
     ((@done_content_records * 100).to_f / school_days).round(2)
   end
 
@@ -356,6 +358,7 @@ class PedagogicalTrackingsController < ApplicationController
                                      .group_by(&:frequency_date).size
 
     return 0 if school_days.zero?
+    return 100 if school_days < done_frequencies?
     ((done_frequencies * 100).to_f / school_days).round(2)
   end
 end
