@@ -52,5 +52,10 @@ Gemfile.plugins
 
 # Docker
 docker-compose.override.yml
+
+# Ides
 .idea/*
 .vscode/*
+
+
+config/environments/development.rb

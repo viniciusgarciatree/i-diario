@@ -180,6 +180,11 @@ class PedagogicalTrackingsController < ApplicationController
     @done_frequencies = @done_frequencies.by_teacher_id(teacher_id) if teacher_id
     @done_frequencies = @done_frequencies.group_by(&:frequency_date).size
 
+    if @done_frequencies > school_days
+      school_days = @done_frequencies
+    end
+
+    return 0 if school_days.zero?
     ((@done_frequencies * 100).to_f / school_days).round(2)
   end
 
@@ -198,6 +203,7 @@ class PedagogicalTrackingsController < ApplicationController
     @done_content_records = @done_content_records.by_teacher_id(teacher_id) if teacher_id
     @done_content_records = @done_content_records.group_by(&:record_date).size
 
+    return 0 if school_days.zero?
     ((@done_content_records * 100).to_f / school_days).round(2)
   end
 
@@ -248,6 +254,9 @@ class PedagogicalTrackingsController < ApplicationController
       classroom_id,
       teacher_id
     )
+
+    frequency_percentage = frequency_percentage > 100 ? 100 : frequency_percentage
+    content_record_percentage = content_record_percentage > 100 ? 100 : content_record_percentage
 
     if classroom_id
       classroom = Classroom.find(classroom_id)
@@ -348,6 +357,7 @@ class PedagogicalTrackingsController < ApplicationController
                                      .where(owner_teacher_id: nil)
                                      .group_by(&:frequency_date).size
 
+    return 0 if school_days.zero?
     ((done_frequencies * 100).to_f / school_days).round(2)
   end
 end

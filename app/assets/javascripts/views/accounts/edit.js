@@ -1,6 +1,6 @@
 $(function() {
   'use strict';
-
+  /*
   var toggleUserReceiveNewsOptions = function(){
     if($("#user_receive_news").prop("checked")){
       $(".receive_news_options").show();
@@ -10,10 +10,12 @@ $(function() {
   }
   $("#user_receive_news").on("change", toggleUserReceiveNewsOptions);
   toggleUserReceiveNewsOptions();
+  */
 
   window.addEventListener('DOMContentLoaded', function () {
     var avatar = $('#profile-picture-prev')[0];
     var menu_avatar = $('#menu_avatar')[0];
+	  debugger;
     var image = $('#profile-image')[0];
     var input = $('#profile-picture-input')[0];
 
