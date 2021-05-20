@@ -6,7 +6,7 @@ module Turnip
     end
 
     step 'poderei alterar informações da entidade' do
-      fill_in 'Nome da entidade', with: 'Prefeitura municipal de Portabilis Tecnologia'
+      fill_in 'Nome da entidade', with: 'Prefeitura municipal de Versa Educacional'
       fill_mask 'CEP', with: '88820-000'
       sleep 5.0
       fill_in 'Rua', with: 'Rua de Exemplo'

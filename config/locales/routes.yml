@@ -51,6 +51,7 @@ pt-BR:
     contents: 'conteudos'
     user_roles: 'permissoes-do-usuario'
     teacher_report_cards: 'boletim-do-professor'
+    student_report_data: 'dados-familiar-aluno'
     discipline_lesson_plan: 'planos-de-aula-por-disciplina'
     discipline_lesson_plans: 'planos-de-aulas-por-disciplina'
     discipline_content_record: 'registros-de-conteudos-por-disciplina'

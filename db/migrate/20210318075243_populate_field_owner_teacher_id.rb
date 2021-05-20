@@ -12,7 +12,7 @@ class PopulateFieldOwnerTeacherId < ActiveRecord::Migration
                  discipline_id
             FROM daily_frequencies
            WHERE owner_teacher_id IS NULL
-             AND EXTRACT(year FROM frequency_date) = 2020
+             AND EXTRACT(year FROM frequency_date) = 2021
         ) LOOP
             SELECT user_id
               INTO _user_id
@@ -27,7 +27,7 @@ class PopulateFieldOwnerTeacherId < ActiveRecord::Migration
                   SELECT teacher_id
                     INTO _teacher_id
                     FROM teacher_discipline_classrooms
-                   WHERE year = 2020
+                   WHERE year = 2021
                      AND classroom_id = _daily_frequency.classroom_id
                      AND discipline_id = _daily_frequency.discipline_id;
                 END IF;

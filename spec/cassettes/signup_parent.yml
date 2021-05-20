@@ -88,7 +88,7 @@ http_interactions:
     body:
       encoding: UTF-8
       string: '{"id":71,"slug":"prefeitura","active_on_ieducar":false,"active_on_new_education":true,"ieducar_image":{"url":"https://apps-core-images.s3.amazonaws.com/administrative_tools/uploads/customer/ieducar_image/71/tux.png"},"ieducar_entity_name":"Prefeitura
-        Municipal do Tux","ieducar_login_footer":"\u003cp\u003ePortabilis Tecnologia
+        Municipal do Tux","ieducar_login_footer":"\u003cp\u003eVersa Educacional
         - suporte@portabilis.com.br - \u003ca class=\"light\" href=\"http://suporte.portabilis.com.br\"
         target=\"_blank\"\u003e Obter Suporte \u003c/a\u003e\u003c/p\u003e\r\n","ieducar_external_footer":"\u003cp\u003eConhe\u0026ccedil;a
         mais sobre o i-Educar e a Portabilis, acesse nosso \u003ca href=\"http://blog.portabilis.com.br\"\u003eblog\u003c/a\u003e\u003c/p\u003e\r\n","ieducar_internal_footer":"\u003cp\u003eConhe\u0026ccedil;a

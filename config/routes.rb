@@ -329,6 +329,9 @@ Rails.application.routes.draw do
     get '/reports/teacher_report_cards', to: 'teacher_report_cards#form', as: 'teacher_report_cards'
     post '/reports/teacher_report_cards', to: 'teacher_report_cards#report', as: 'teacher_report_cards'
 
+    get '/reports/student_report_data', to: 'student_report_data#form', as: 'student_report_data'
+    post '/reports/student_report_data', to: 'student_report_data#report', as: 'student_report_data'
+
     resources :data_exportations, only: [:index, :create]
   end
 end

@@ -65,3 +65,8 @@ yarn-debug.log*
 
 # Carrierwave
 config/initializers/custom_carrierwave.rb
+# Ides
+.idea/*
+.vscode/*
+
+config/environments/development.rb
